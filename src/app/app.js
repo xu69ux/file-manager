@@ -110,7 +110,7 @@ class App {
 
           break;
         
-        case 'copy':
+        case 'cp':
           await this.copyFile(args[0], args[1]);
           this.rl.prompt();
           
