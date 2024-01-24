@@ -125,6 +125,11 @@ class App {
           this.rl.prompt();
 
           break;
+        case 'add':
+          await this.createFile(args[0], args[1]);
+          this.rl.prompt();
+
+          break;
         default:
           console.log('Invalid input. Try again.');
           this.rl.prompt();
@@ -268,6 +273,12 @@ class App {
             throw err;
         }
     }
+  }
+
+  async createFile(pathToDirectory, fileName) {
+    const filePath = `${pathToDirectory}/${fileName}`;
+    await fsPromises.writeFile(filePath, '');
+    console.log(`File ${fileName} created successfully in ${pathToDirectory}`);
   }
 }
 
