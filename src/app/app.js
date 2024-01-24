@@ -42,6 +42,43 @@ class App {
 
           break;
 
+        case 'os':
+          const osCommand = args[0];
+          switch (osCommand) {
+            case '--EOL':
+              console.log(os.EOL);
+              this.rl.prompt();
+
+              break;
+            case '--cpus':
+              const cpus = os.cpus();
+              console.log(`Total CPUs: ${cpus.length}`);
+              cpus.forEach((cpu, index) => {
+                console.log(`CPU ${index + 1}: ${cpu.model}, ${cpu.speed / 1000} GHz`);
+              });
+               this.rl.prompt();
+
+              break;
+            case '--homedir':
+              console.log(os.homedir());
+              this.rl.prompt();
+
+              break;
+            case '--username':
+              console.log(os.userInfo().username);
+              this.rl.prompt();
+
+              break;
+            case '--architecture':
+              console.log(os.arch());
+              this.rl.prompt();
+
+              break;
+            default:
+              console.log('Invalid OS command. Try again.');
+              this.rl.prompt();
+          }
+          break;  
         default:
           console.log('Invalid input. Try again.');
           this.rl.prompt();
