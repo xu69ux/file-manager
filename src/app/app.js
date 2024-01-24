@@ -1,5 +1,5 @@
 import os from 'os';
-import fs from 'fs';
+import fs, { access } from 'fs';
 import fsPromises from 'fs/promises';
 import readline from 'readline';
 import path from 'path';
@@ -103,6 +103,18 @@ class App {
           this.rl.prompt();
 
           break;
+        
+        case 'rm':
+          await this.deleteFile(args[0]);
+          this.rl.prompt();
+
+          break;
+        
+        case 'copy':
+          await this.copyFile(args[0], args[1]);
+          this.rl.prompt();
+          
+          break;
 
         default:
           console.log('Invalid input. Try again.');
@@ -177,6 +189,46 @@ class App {
 
     await pipelineAsync(source, gunzip, destination);
     console.log('File decompressed successfully.');
+  }
+
+  async deleteFile(pathToFile) {
+    try {
+      await fsPromises.unlink(pathToFile);
+      console.log('File deleted successfully.');
+    } catch (err) {
+        if (err.code === 'ENOENT') {
+            throw new Error('FS operation failed');
+        } else {
+            throw err;
+        }
+    }
+  }
+
+  async copyFile(pathToSourceFile, pathToDestinationFile) {
+    try {
+      await fsPromises.access(pathToDestinationFile);
+      throw new Error('FS operation failed');
+    } catch (err) {
+        if (err.code === 'ENOENT') {
+            await fsPromises.mkdir(pathToDestinationFile);
+            const files = await fsPromises.readdir(pathToSourceFile);
+            await Promise.all(files.map(async file => {
+                const pathToSource = path.join(pathToSourceFile, file);
+                const pathToTarget = path.join(pathToDestinationFile, file);
+                try {
+                  await fsPromises.copyFile(pathToSource, pathToTarget);
+                  console.log(`File ${file} copied successfully.`);
+                } catch (err) {
+                    if (err.code !== 'ENOTSUP') {
+                        throw err;
+                    }
+                    console.log(`Skipping file ${file} due to unsupported operation.`);
+                }
+            }));
+        } else {
+            throw err;
+        }
+    }
   }
 }
 
