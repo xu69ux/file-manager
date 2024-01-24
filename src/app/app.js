@@ -1,8 +1,12 @@
 import os from 'os';
-import fs from 'fs/promises';
+import fs from 'fs';
+import fsPromises from 'fs/promises';
 import readline from 'readline';
 import path from 'path';
 import crypto from 'crypto';
+import zlib from 'zlib';
+import { pipeline } from 'stream';
+import { promisify } from 'util';
 
 
 class App {
@@ -87,6 +91,18 @@ class App {
           this.rl.prompt();
 
           break;
+        
+        case 'compress':
+          await this.compressFile(args[0], args[1]);
+          this.rl.prompt();
+
+          break;
+        
+        case 'decompress':
+          await this.decompressFile(args[0], args[1]);
+          this.rl.prompt();
+
+          break;
 
         default:
           console.log('Invalid input. Try again.');
@@ -108,9 +124,9 @@ class App {
   }
 
   async listFiles() {
-    const files = await fs.readdir(this.currentDirectory);
+    const files = await fsPromises.readdir(this.currentDirectory);
     const filesWithDetails = await Promise.all(files.map(async (file, index) => {
-      const stats = await fs.stat(`${this.currentDirectory}/${file}`);
+      const stats = await fsPromises.stat(`${this.currentDirectory}/${file}`);
       return {
         name: file,
         type: stats.isDirectory() ? 'directory' : 'file',
@@ -126,7 +142,7 @@ class App {
   async changeDirectory(pathToDirectory) {
     const newPath = path.resolve(this.currentDirectory, pathToDirectory);
     try {
-      await fs.access(newPath);
+      await fsPromises.access(newPath);
       this.currentDirectory = newPath;
       this.rl.setPrompt(`You are currently in ${this.currentDirectory}\nEnter a command: `);
     } catch {
@@ -136,11 +152,31 @@ class App {
 
   async calculateHash(pathToFile, hashType = 'sha256') {
     const hash = crypto.createHash(hashType);
-    const data = await fs.readFile(pathToFile);
+    const data = await fsPromises.readFile(pathToFile);
     
     hash.update(data);
     const result = hash.digest('hex');
     console.log(result);
+  }
+
+  async compressFile(pathToSourceFile, pathToDestinationFile) {
+    const pipelineAsync = promisify(pipeline);
+    const gzip = zlib.createGzip();
+    const source = fs.createReadStream(pathToSourceFile);
+    const destination = fs.createWriteStream(pathToDestinationFile);
+    
+    await pipelineAsync(source, gzip, destination);
+    console.log('File compressed successfully.');
+  }
+
+  async decompressFile(pathToSourceFile, pathToDestinationFile) {
+    const pipelineAsync = promisify(pipeline);
+    const gunzip = zlib.createGunzip(); 
+    const source = fs.createReadStream(pathToSourceFile);
+    const destination = fs.createWriteStream(pathToDestinationFile);
+
+    await pipelineAsync(source, gunzip, destination);
+    console.log('File decompressed successfully.');
   }
 }
 
