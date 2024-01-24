@@ -1,11 +1,11 @@
-import exp from 'constants';
+import os from 'os';
 import fs from 'fs/promises';
 import readline from 'readline';
 
 class App {
   constructor(username) {
     this.username = username;
-    this.currentDirectory = process.cwd();
+    this.currentDirectory = os.homedir();
 
     this.rl = readline.createInterface({
       input: process.stdin,
@@ -32,7 +32,7 @@ class App {
           break;
 
         case 'ls':
-          // 'ls'
+          this.listFiles();
           break;
 
         default:
@@ -44,8 +44,6 @@ class App {
       console.log(`Thank you for using File Manager, ${this.username}, goodbye!`);
       process.exit(0);
     });
-
-    this.listFiles();
   }
 
   async listFiles() {
