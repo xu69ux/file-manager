@@ -120,7 +120,11 @@ class App {
           this.rl.prompt();
 
           break;
+        case 'rn':
+          await this.renameFile(args[0], args[1]);
+          this.rl.prompt();
 
+          break;
         default:
           console.log('Invalid input. Try again.');
           this.rl.prompt();
@@ -247,6 +251,23 @@ class App {
           throw err;
       }
   }
+  }
+
+  async renameFile(pathToOldFile, newFileName) {
+    const parentDirectory = path.dirname(pathToOldFile);
+    const pathToNewFile = path.join(parentDirectory, newFileName);
+
+    try {
+      await fsPromises.access(pathToNewFile);
+      throw new Error('FS operation failed');
+    } catch (err) {
+        if (err.code === 'ENOENT') {
+            await fsPromises.rename(pathToOldFile, pathToNewFile);
+            console.log('File renamed successfully.');
+        } else {
+            throw err;
+        }
+    }
   }
 }
 
