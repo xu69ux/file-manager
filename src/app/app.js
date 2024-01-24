@@ -1,6 +1,7 @@
 import os from 'os';
 import fs from 'fs/promises';
 import readline from 'readline';
+import { stat } from 'fs';
 
 class App {
   constructor(username) {
@@ -32,7 +33,9 @@ class App {
           break;
 
         case 'ls':
-          this.listFiles();
+          this.listFiles().then(() => {
+            this.rl.prompt();
+          });
           break;
 
         default:
@@ -48,7 +51,18 @@ class App {
 
   async listFiles() {
     const files = await fs.readdir(this.currentDirectory);
-    console.log(files);
+    const filesWithDetails = await Promise.all(files.map(async (file, index) => {
+      const stats = await fs.stat(`${this.currentDirectory}/${file}`);
+      return {
+        name: file,
+        type: stats.isDirectory() ? 'directory' : 'file',
+        size: stats.size,
+
+      };
+    }));
+    console.log('\n');
+    console.table(filesWithDetails);
+    console.log('\n');
   }
 }
 
