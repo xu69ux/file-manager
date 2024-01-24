@@ -130,6 +130,11 @@ class App {
           this.rl.prompt();
 
           break;
+        case 'mv':
+          await this.moveFile(args[0], args[1]);
+          this.rl.prompt();
+
+          break;  
         default:
           console.log('Invalid input. Try again.');
           this.rl.prompt();
@@ -279,6 +284,29 @@ class App {
     const filePath = `${pathToDirectory}/${fileName}`;
     await fsPromises.writeFile(filePath, '');
     console.log(`File ${fileName} created successfully in ${pathToDirectory}`);
+  }
+
+  async moveFile(pathToFile, pathToNewDirectory) {
+    const fileName = path.basename(pathToFile);
+    const newPath = path.join(pathToNewDirectory, fileName);
+
+    const readStream = fs.createReadStream(pathToFile);
+    const writeStream = fs.createWriteStream(newPath);
+
+    readStream.pipe(writeStream);
+
+    readStream.on('end', async () => {
+      await fs.promises.unlink(pathToFile);
+      console.log(`File moved successfully to ${newPath}`);
+    });
+
+    readStream.on('error', (err) => {
+      console.error(`Error while reading file: ${err}`);
+    });
+
+    writeStream.on('error', (err) => {
+      console.error(`Error while writing file: ${err}`);
+    });
   }
 }
 
