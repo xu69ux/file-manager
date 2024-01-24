@@ -2,6 +2,8 @@ import os from 'os';
 import fs from 'fs/promises';
 import readline from 'readline';
 import path from 'path';
+import crypto from 'crypto';
+
 
 class App {
   constructor(username) {
@@ -79,6 +81,13 @@ class App {
               this.rl.prompt();
           }
           break;  
+        
+        case 'hash':
+          await this.calculateHash(args[0]);
+          this.rl.prompt();
+
+          break;
+
         default:
           console.log('Invalid input. Try again.');
           this.rl.prompt();
@@ -123,6 +132,15 @@ class App {
     } catch {
       console.log('Directory does not exist');
     }
+  }
+
+  async calculateHash(pathToFile, hashType = 'sha256') {
+    const hash = crypto.createHash(hashType);
+    const data = await fs.readFile(pathToFile);
+    
+    hash.update(data);
+    const result = hash.digest('hex');
+    console.log(result);
   }
 }
 
