@@ -1,25 +1,9 @@
-import { createInterface } from 'readline/promises';
+import App from './src/app/app.js';
 
-const usernameArg = process.argv.find(arg => arg.startsWith('--username='));
-if (!usernameArg) {
-  console.log('Please provide a username with --username=your_username');
-  process.exit(1);
-}
-const username = usernameArg.split('=')[1];
+const args = process.argv.slice(2);
+const usernameArg = args.find(arg => arg.startsWith('--username='));
+const username = usernameArg ? usernameArg.split('=')[1] : 'anonymous';
 
-console.log(`Welcome to the File Manager, ${username}!`);
+const app = new App(username);
 
-const rl = createInterface({
-  input: process.stdin,
-  output: process.stdout
-});
-
-console.log('Press any key to exit...');
-process.stdin.setRawMode(true);
-process.stdin.resume();
-process.stdin.on('data', () => {
-  process.stdout.clearLine();
-  process.stdout.cursorTo(0);
-  console.log(`Thank you for using File Manager, ${username}, goodbye!`);
-  process.exit();
-});
+app.start();
