@@ -83,7 +83,7 @@ class App {
           break;  
         
         case 'hash':
-          await this.calculateHash(args[0]);
+          await this.calculateHash(args[0], args[1]);
           this.rl.prompt();
 
           break;
