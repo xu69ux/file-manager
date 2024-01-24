@@ -56,7 +56,7 @@ class App {
       return {
         name: file,
         type: stats.isDirectory() ? 'directory' : 'file',
-        size: stats.size,
+        size: stats.size > 1000 ? `${(stats.size / 1000).toFixed(2)} GB` : `${stats.size} MB`,
 
       };
     }));
