@@ -115,6 +115,11 @@ class App {
           this.rl.prompt();
           
           break;
+        case 'cat':
+          await this.readFile(args[0]);
+          this.rl.prompt();
+
+          break;
 
         default:
           console.log('Invalid input. Try again.');
@@ -229,6 +234,19 @@ class App {
             throw err;
         }
     }
+  }
+
+  async readFile(pathToFile) {
+    try {
+      const data = await fsPromises.readFile(pathToFile, 'utf-8');
+      console.log(data);
+  } catch (err) {
+      if (err.code === 'ENOENT') {
+          throw new Error('FS operation failed');
+      } else {
+          throw err;
+      }
+  }
   }
 }
 
