@@ -3,13 +3,13 @@ import fs from 'fs';
 import fsPromises from 'fs/promises';
 import readline from 'readline';
 import path from 'path';
-import crypto from 'crypto';
 import zlib from 'zlib';
 import { pipeline } from 'stream';
 import { promisify } from 'util';
 
 import handleOSCommand from './modules/os.js';
 import handleFSCommand from './modules/fs.js';
+import handleHashCommand from './modules/hash.js';
 
 
 
@@ -56,6 +56,9 @@ class App {
         case 'rm':
           await handleFSCommand('rm', args, this.rl);
           break;
+        case 'hash':
+          await handleHashCommand(args, this.rl);
+          break;  
 
         case 'up':
           this.goToParentDirectory();
@@ -71,12 +74,6 @@ class App {
 
         case 'ls':
           await this.listFiles();
-          this.rl.prompt();
-
-          break;
-        
-        case 'hash':
-          await this.calculateHash(args[0], args[1]);
           this.rl.prompt();
 
           break;
@@ -135,15 +132,6 @@ class App {
     } catch {
       console.log('Directory does not exist');
     }
-  }
-
-  async calculateHash(pathToFile, hashType = 'sha256') {
-    const hash = crypto.createHash(hashType);
-    const data = await fsPromises.readFile(pathToFile);
-    
-    hash.update(data);
-    const result = hash.digest('hex');
-    console.log(result);
   }
 
   async compressFile(pathToSourceFile, pathToDestinationFile) {
