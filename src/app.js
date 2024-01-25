@@ -1,16 +1,11 @@
 import os from 'os';
-import fs from 'fs';
-import fsPromises from 'fs/promises';
 import readline from 'readline';
-import path from 'path';
-import zlib from 'zlib';
-import { pipeline } from 'stream';
-import { promisify } from 'util';
 
 import handleOSCommand from './modules/os.js';
 import handleFSCommand from './modules/fs.js';
 import handleHashCommand from './modules/hash.js';
-
+import handleZipCommand from './modules/zip.js';
+import handleDirCommand from './modules/dir.js';
 
 
 class App {
@@ -58,38 +53,18 @@ class App {
           break;
         case 'hash':
           await handleHashCommand(args, this.rl);
-          break;  
-
-        case 'up':
-          this.goToParentDirectory();
-          this.rl.prompt();
-
           break;
-
-        case 'cd':
-          await this.changeDirectory(args[0]);
-          this.rl.prompt();
-
-          break;
-
-        case 'ls':
-          await this.listFiles();
-          this.rl.prompt();
-
-          break;
-        
         case 'compress':
-          await this.compressFile(args[0], args[1]);
-          this.rl.prompt();
-
+          await handleZipCommand('compress', args, this.rl);
           break;
-        
         case 'decompress':
-          await this.decompressFile(args[0], args[1]);
-          this.rl.prompt();
-
-          break;
-  
+          await handleZipCommand('decompress', args, this.rl);
+          break;      
+          case 'ls':
+          case 'cd':
+          case 'up':
+            this.currentDirectory = await handleDirCommand(command, args, this.currentDirectory, this.rl);
+            break;  
         default:
           console.log('Invalid input. Try again.');
           this.rl.prompt();
@@ -100,60 +75,6 @@ class App {
       process.exit(0);
     });
   }
-  
-  goToParentDirectory() {
-    const parentDirectory = path.dirname(this.currentDirectory);
-    if (parentDirectory !== this.currentDirectory) {
-      this.currentDirectory = parentDirectory;
-      this.rl.setPrompt(`You are currently in ${this.currentDirectory}\nEnter a command: `);
-    }
-  }
-
-  async listFiles() {
-    const files = await fsPromises.readdir(this.currentDirectory);
-    const filesWithDetails = await Promise.all(files.map(async (file, index) => {
-      const stats = await fsPromises.stat(`${this.currentDirectory}/${file}`);
-      return {
-        name: file,
-        type: stats.isDirectory() ? 'directory' : 'file',
-      };
-    }));
-    console.log('\n');
-    console.table(filesWithDetails);
-    console.log('\n');
-  }
-
-  async changeDirectory(pathToDirectory) {
-    const newPath = path.resolve(this.currentDirectory, pathToDirectory);
-    try {
-      await fsPromises.access(newPath);
-      this.currentDirectory = newPath;
-      this.rl.setPrompt(`You are currently in ${this.currentDirectory}\nEnter a command: `);
-    } catch {
-      console.log('Directory does not exist');
-    }
-  }
-
-  async compressFile(pathToSourceFile, pathToDestinationFile) {
-    const pipelineAsync = promisify(pipeline);
-    const gzip = zlib.createGzip();
-    const source = fs.createReadStream(pathToSourceFile);
-    const destination = fs.createWriteStream(pathToDestinationFile);
-    
-    await pipelineAsync(source, gzip, destination);
-    console.log('File compressed successfully.');
-  }
-
-  async decompressFile(pathToSourceFile, pathToDestinationFile) {
-    const pipelineAsync = promisify(pipeline);
-    const gunzip = zlib.createGunzip(); 
-    const source = fs.createReadStream(pathToSourceFile);
-    const destination = fs.createWriteStream(pathToDestinationFile);
-
-    await pipelineAsync(source, gunzip, destination);
-    console.log('File decompressed successfully.');
-  }
-
 }
 
 export default App;
