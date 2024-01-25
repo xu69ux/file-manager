@@ -2,44 +2,49 @@ import fs from 'fs';
 import fsPromises from 'fs/promises';
 import path from 'path';
 
-async function handleFSCommand(command, args, rl) {
-  switch (command) {
-    case 'cat':
-      return await catCommand(args[0], rl);
-    case 'add':
-      return await addCommand(args[0], args[1], rl);
-    case 'rn':
-      return await rnCommand(args[0], args[1], rl);
-    case 'cp':
-      return await cpCommand(args[0], args[1], rl);
-    case 'mv':
-      return await mvCommand(args[0], args[1], rl);
-    case 'rm':
-      return await rmCommand(args[0], rl);
-    default:
-      throw new Error(`Unknown command: ${command}`);
-  }
+const commands = {
+  cat: catCommand,
+  add: addCommand,
+  rn: rnCommand,
+  cp: cpCommand,
+  mv: mvCommand,
+  rm: rmCommand
 };
 
-async function catCommand(pathToFile, rl) {
-  const readStream = fs.createReadStream(pathToFile, 'utf-8');
-  readStream.on('data', chunk => {
-    console.log(chunk);
-  });
-  readStream.on('end', () => {
-    rl.prompt();
-  });
-  readStream.on('error', err => {
+async function handleFSCommand(command, args, rl) {
+  const commandFunc = commands[command];
+  if (!commandFunc) {
+    throw new Error(`Unknown command: ${command}`);
+  }
+  return commandFunc(...args, rl);
+};
+
+async function handleStreamError(stream, rl) {
+  stream.on('error', err => {
     if (err.code === 'ENOENT') {
-      throw new Error('FS operation failed');
+      throw new Error(`FS operation failed with error: ${err.code}`);
     } else {
       throw err;
     }
   });
+  stream.on('end', () => {
+    rl.prompt();
+  });
+}
+
+async function catCommand(pathToFile, rl) {
+  const readStream = fs.createReadStream(pathToFile, 'utf-8');
+  readStream.on('readable', () => {
+    let chunk;
+    while (null !== (chunk = readStream.read())) {
+      console.log(chunk);
+    }
+  });
+  await handleStreamError(readStream, rl);
 }
 
 async function addCommand(pathToDirectory, fileName, rl) {
-  const filePath = `${pathToDirectory}/${fileName}`;
+  const filePath = path.join(pathToDirectory, fileName);
   await fsPromises.writeFile(filePath, '');
   console.log(`File ${fileName} created successfully in ${pathToDirectory}`);
   rl.prompt();
@@ -51,7 +56,7 @@ async function rnCommand(pathToOldFile, newFileName, rl) {
 
   try {
     await fsPromises.access(pathToNewFile);
-    throw new Error('FS operation failed');
+    throw new Error('A file with the new name already exists');
   } catch (err) {
       if (err.code === 'ENOENT') {
           await fsPromises.rename(pathToOldFile, pathToNewFile);
@@ -69,18 +74,10 @@ async function cpCommand(pathToSourceFile, pathToDestinationFolder, rl) {
   const readStream = fs.createReadStream(pathToSourceFile);
   const writeStream = fs.createWriteStream(destinationPath);
 
-  readStream.on('error', (err) => {
-    console.error(`Error while reading file: ${err}`);
-  });
+  await handleStreamError(readStream, rl);
+  await handleStreamError(writeStream, rl);
 
-  writeStream.on('error', (err) => {
-    console.error(`Error while writing file: ${err}`);
-  });
-
-  writeStream.on('close', () => {
-    console.log(`File copied successfully to ${destinationPath}`);
-    rl.prompt();
-  });
+  console.log(`File copied successfully to ${destinationPath}`);
 
   readStream.pipe(writeStream);
 }
@@ -94,19 +91,11 @@ async function mvCommand(pathToFile, pathToNewDirectory, rl) {
 
   readStream.pipe(writeStream);
 
-  readStream.on('end', async () => {
-    await fs.promises.unlink(pathToFile);
-    console.log(`File moved successfully to ${newPath}`);
-    rl.prompt();
-  });
+  await handleStreamError(readStream, rl);
+  await handleStreamError(writeStream, rl);
 
-  readStream.on('error', (err) => {
-    console.error(`Error while reading file: ${err}`);
-  });
-
-  writeStream.on('error', (err) => {
-    console.error(`Error while writing file: ${err}`);
-  });
+  await fs.promises.unlink(pathToFile);
+  console.log(`File moved successfully to ${newPath}`);
 }
 
 async function rmCommand(pathToFile, rl) {

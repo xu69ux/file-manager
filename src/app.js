@@ -7,7 +7,6 @@ import handleHashCommand from './modules/hash.js';
 import handleZipCommand from './modules/zip.js';
 import handleDirCommand from './modules/dir.js';
 
-
 class App {
   constructor(username) {
     this.username = username;
@@ -19,6 +18,22 @@ class App {
     });
 
     this.rl.setPrompt(`You are currently in ${this.currentDirectory}\nEnter a command: `);
+
+    this.commands = {
+      'os': args => handleOSCommand(args, this.rl),
+      'cat': args => handleFSCommand('cat', args, this.rl),
+      'add': args => handleFSCommand('add', args, this.rl),
+      'rn': args => handleFSCommand('rn', args, this.rl),
+      'cp': args => handleFSCommand('cp', args, this.rl),
+      'mv': args => handleFSCommand('mv', args, this.rl),
+      'rm': args => handleFSCommand('rm', args, this.rl),
+      'hash': args => handleHashCommand(args, this.rl),
+      'compress': args => handleZipCommand('compress', args, this.rl),
+      'decompress': args => handleZipCommand('decompress', args, this.rl),
+      'ls': args => handleDirCommand('ls', args, this.currentDirectory, this.rl),
+      'cd': args => handleDirCommand('cd', args, this.currentDirectory, this.rl),
+      'up': args => handleDirCommand('up', args, this.currentDirectory, this.rl),
+    };
   }
 
   start() {
@@ -28,46 +43,11 @@ class App {
     this.rl.on('line', async (input) => {
       const [command, ...args] = input.trim().split(' ');
 
-      switch (command) {
-        case 'os':
-          handleOSCommand(args);
-          this.rl.prompt();
-          break;
-        case 'cat':
-          await handleFSCommand('cat', args, this.rl);
-          break;
-        case 'add':
-          await handleFSCommand('add', args, this.rl);
-          break;
-        case 'rn':
-          await handleFSCommand('rn', args, this.rl);
-          break;
-        case 'cp':
-          await handleFSCommand('cp', args, this.rl);
-          break;
-        case 'mv':
-          await handleFSCommand('mv', args, this.rl);
-          break;
-        case 'rm':
-          await handleFSCommand('rm', args, this.rl);
-          break;
-        case 'hash':
-          await handleHashCommand(args, this.rl);
-          break;
-        case 'compress':
-          await handleZipCommand('compress', args, this.rl);
-          break;
-        case 'decompress':
-          await handleZipCommand('decompress', args, this.rl);
-          break;      
-          case 'ls':
-          case 'cd':
-          case 'up':
-            this.currentDirectory = await handleDirCommand(command, args, this.currentDirectory, this.rl);
-            break;  
-        default:
-          console.log('Invalid input. Try again.');
-          this.rl.prompt();
+      if (this.commands[command]) {
+        this.currentDirectory = await this.commands[command](args);
+      } else {
+        console.log('Invalid input. Try again.');
+        this.rl.prompt();
       }
 
     }).on('close', () => {

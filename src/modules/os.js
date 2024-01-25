@@ -1,35 +1,28 @@
 import os from 'os';
 
-function handleOSCommand(args) {
+const commands = {
+  '--EOL': () => os.EOL,
+  '--cpus': () => {
+    const cpus = os.cpus();
+    return `Total CPUs: ${cpus.length}\n` + cpus.map((cpu, index) => `CPU ${index + 1}: ${cpu.model}, ${cpu.speed / 1000} GHz`).join('\n');
+  },
+  '--homedir': () => os.homedir(),
+  '--username': () => os.userInfo().username,
+  '--architecture': () => os.arch(),
+};
+
+function handleOSCommand(args, rl) {
   const osCommand = args[0];
-  switch (osCommand) {
-    case '--EOL':
-      console.log(os.EOL);
-      break;
+  const commandFunc = commands[osCommand];
 
-    case '--cpus':
-      const cpus = os.cpus();
-      console.log(`Total CPUs: ${cpus.length}`);
-      cpus.forEach((cpu, index) => {
-        console.log(`CPU ${index + 1}: ${cpu.model}, ${cpu.speed / 1000} GHz`);
-      });
-      break;
-
-    case '--homedir':
-      console.log(os.homedir());
-      break;
-
-    case '--username':
-      console.log(os.userInfo().username);
-      break;
-
-    case '--architecture':
-      console.log(os.arch());
-      break;
-      
-    default:
-      console.log('Invalid OS command. Try again.');
+  if (commandFunc) {
+    console.log(commandFunc());
+  } else {
+    console.log('Invalid OS command. Try again.');
+    console.log('Valid commands are:', Object.keys(commands).join(', '));
   }
+
+  rl.prompt();
 }
 
 export default handleOSCommand;
