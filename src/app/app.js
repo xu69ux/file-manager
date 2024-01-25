@@ -1,5 +1,5 @@
 import os from 'os';
-import fs, { access } from 'fs';
+import fs from 'fs';
 import fsPromises from 'fs/promises';
 import readline from 'readline';
 import path from 'path';
@@ -117,7 +117,6 @@ class App {
           break;
         case 'cat':
           await this.readFile(args[0]);
-          this.rl.prompt();
 
           break;
         case 'rn':
@@ -161,8 +160,6 @@ class App {
       return {
         name: file,
         type: stats.isDirectory() ? 'directory' : 'file',
-        size: stats.size > 1000 ? `${(stats.size / 1000).toFixed(2)} GB` : `${stats.size} MB`,
-
       };
     }));
     console.log('\n');
@@ -228,39 +225,45 @@ class App {
       await fsPromises.access(pathToDestinationFile);
       throw new Error('FS operation failed');
     } catch (err) {
-        if (err.code === 'ENOENT') {
-            await fsPromises.mkdir(pathToDestinationFile);
-            const files = await fsPromises.readdir(pathToSourceFile);
-            await Promise.all(files.map(async file => {
-                const pathToSource = path.join(pathToSourceFile, file);
-                const pathToTarget = path.join(pathToDestinationFile, file);
-                try {
-                  await fsPromises.copyFile(pathToSource, pathToTarget);
-                  console.log(`File ${file} copied successfully.`);
-                } catch (err) {
-                    if (err.code !== 'ENOTSUP') {
-                        throw err;
-                    }
-                    console.log(`Skipping file ${file} due to unsupported operation.`);
-                }
-            }));
-        } else {
-            throw err;
-        }
+      if (err.code === 'ENOENT') {
+        await fsPromises.mkdir(pathToDestinationFile);
+        const files = await fsPromises.readdir(pathToSourceFile);
+        await Promise.all(files.map(async file => {
+          const pathToSource = path.join(pathToSourceFile, file);
+          const pathToTarget = path.join(pathToDestinationFile, file);
+          try {
+            const readStream = fs.createReadStream(pathToSource);
+            const writeStream = fs.createWriteStream(pathToTarget);
+            readStream.pipe(writeStream);
+            console.log(`File ${file} copied successfully.`);
+          } catch (err) {
+            if (err.code !== 'ENOTSUP') {
+              throw err;
+            }
+            console.log(`Skipping file ${file} due to unsupported operation.`);
+          }
+        }));
+      } else {
+        throw err;
+      }
     }
   }
 
   async readFile(pathToFile) {
-    try {
-      const data = await fsPromises.readFile(pathToFile, 'utf-8');
-      console.log(data);
-  } catch (err) {
+    const readStream = fs.createReadStream(pathToFile, 'utf-8');
+    readStream.on('data', chunk => {
+      console.log(chunk);
+    });
+    readStream.on('end', () => {
+      this.rl.prompt();
+    });
+    readStream.on('error', err => {
       if (err.code === 'ENOENT') {
-          throw new Error('FS operation failed');
+        throw new Error('FS operation failed');
       } else {
-          throw err;
+        throw err;
       }
-  }
+    });
   }
 
   async renameFile(pathToOldFile, newFileName) {
