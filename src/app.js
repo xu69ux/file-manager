@@ -7,7 +7,10 @@ import crypto from 'crypto';
 import zlib from 'zlib';
 import { pipeline } from 'stream';
 import { promisify } from 'util';
+
 import handleOSCommand from './modules/os.js';
+import handleFSCommand from './modules/fs.js';
+
 
 
 class App {
@@ -34,6 +37,24 @@ class App {
         case 'os':
           handleOSCommand(args);
           this.rl.prompt();
+          break;
+        case 'cat':
+          await handleFSCommand('cat', args, this.rl);
+          break;
+        case 'add':
+          await handleFSCommand('add', args, this.rl);
+          break;
+        case 'rn':
+          await handleFSCommand('rn', args, this.rl);
+          break;
+        case 'cp':
+          await handleFSCommand('cp', args, this.rl);
+          break;
+        case 'mv':
+          await handleFSCommand('mv', args, this.rl);
+          break;
+        case 'rm':
+          await handleFSCommand('rm', args, this.rl);
           break;
 
         case 'up':
@@ -71,37 +92,7 @@ class App {
           this.rl.prompt();
 
           break;
-        
-        case 'rm':
-          await this.deleteFile(args[0]);
-          this.rl.prompt();
-
-          break;
-        
-        case 'cp':
-          await this.copyFile(args[0], args[1]);
-          this.rl.prompt();
-          
-          break;
-        case 'cat':
-          await this.readFile(args[0]);
-
-          break;
-        case 'rn':
-          await this.renameFile(args[0], args[1]);
-          this.rl.prompt();
-
-          break;
-        case 'add':
-          await this.createFile(args[0], args[1]);
-          this.rl.prompt();
-
-          break;
-        case 'mv':
-          await this.moveFile(args[0], args[1]);
-          this.rl.prompt();
-
-          break;  
+  
         default:
           console.log('Invalid input. Try again.');
           this.rl.prompt();
@@ -175,110 +166,6 @@ class App {
     console.log('File decompressed successfully.');
   }
 
-  async deleteFile(pathToFile) {
-    try {
-      await fsPromises.unlink(pathToFile);
-      console.log('File deleted successfully.');
-    } catch (err) {
-        if (err.code === 'ENOENT') {
-            throw new Error('FS operation failed');
-        } else {
-            throw err;
-        }
-    }
-  }
-
-  async copyFile(pathToSourceFile, pathToDestinationFile) {
-    try {
-      await fsPromises.access(pathToDestinationFile);
-      throw new Error('FS operation failed');
-    } catch (err) {
-      if (err.code === 'ENOENT') {
-        await fsPromises.mkdir(pathToDestinationFile);
-        const files = await fsPromises.readdir(pathToSourceFile);
-        await Promise.all(files.map(async file => {
-          const pathToSource = path.join(pathToSourceFile, file);
-          const pathToTarget = path.join(pathToDestinationFile, file);
-          try {
-            const readStream = fs.createReadStream(pathToSource);
-            const writeStream = fs.createWriteStream(pathToTarget);
-            readStream.pipe(writeStream);
-            console.log(`File ${file} copied successfully.`);
-          } catch (err) {
-            if (err.code !== 'ENOTSUP') {
-              throw err;
-            }
-            console.log(`Skipping file ${file} due to unsupported operation.`);
-          }
-        }));
-      } else {
-        throw err;
-      }
-    }
-  }
-
-  async readFile(pathToFile) {
-    const readStream = fs.createReadStream(pathToFile, 'utf-8');
-    readStream.on('data', chunk => {
-      console.log(chunk);
-    });
-    readStream.on('end', () => {
-      this.rl.prompt();
-    });
-    readStream.on('error', err => {
-      if (err.code === 'ENOENT') {
-        throw new Error('FS operation failed');
-      } else {
-        throw err;
-      }
-    });
-  }
-
-  async renameFile(pathToOldFile, newFileName) {
-    const parentDirectory = path.dirname(pathToOldFile);
-    const pathToNewFile = path.join(parentDirectory, newFileName);
-
-    try {
-      await fsPromises.access(pathToNewFile);
-      throw new Error('FS operation failed');
-    } catch (err) {
-        if (err.code === 'ENOENT') {
-            await fsPromises.rename(pathToOldFile, pathToNewFile);
-            console.log('File renamed successfully.');
-        } else {
-            throw err;
-        }
-    }
-  }
-
-  async createFile(pathToDirectory, fileName) {
-    const filePath = `${pathToDirectory}/${fileName}`;
-    await fsPromises.writeFile(filePath, '');
-    console.log(`File ${fileName} created successfully in ${pathToDirectory}`);
-  }
-
-  async moveFile(pathToFile, pathToNewDirectory) {
-    const fileName = path.basename(pathToFile);
-    const newPath = path.join(pathToNewDirectory, fileName);
-
-    const readStream = fs.createReadStream(pathToFile);
-    const writeStream = fs.createWriteStream(newPath);
-
-    readStream.pipe(writeStream);
-
-    readStream.on('end', async () => {
-      await fs.promises.unlink(pathToFile);
-      console.log(`File moved successfully to ${newPath}`);
-    });
-
-    readStream.on('error', (err) => {
-      console.error(`Error while reading file: ${err}`);
-    });
-
-    writeStream.on('error', (err) => {
-      console.error(`Error while writing file: ${err}`);
-    });
-  }
 }
 
 export default App;
