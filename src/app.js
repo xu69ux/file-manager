@@ -7,6 +7,7 @@ import crypto from 'crypto';
 import zlib from 'zlib';
 import { pipeline } from 'stream';
 import { promisify } from 'util';
+import handleOSCommand from './modules/os.js';
 
 
 class App {
@@ -30,6 +31,11 @@ class App {
       const [command, ...args] = input.trim().split(' ');
 
       switch (command) {
+        case 'os':
+          handleOSCommand(args);
+          this.rl.prompt();
+          break;
+
         case 'up':
           this.goToParentDirectory();
           this.rl.prompt();
@@ -47,44 +53,6 @@ class App {
           this.rl.prompt();
 
           break;
-
-        case 'os':
-          const osCommand = args[0];
-          switch (osCommand) {
-            case '--EOL':
-              console.log(os.EOL);
-              this.rl.prompt();
-
-              break;
-            case '--cpus':
-              const cpus = os.cpus();
-              console.log(`Total CPUs: ${cpus.length}`);
-              cpus.forEach((cpu, index) => {
-                console.log(`CPU ${index + 1}: ${cpu.model}, ${cpu.speed / 1000} GHz`);
-              });
-               this.rl.prompt();
-
-              break;
-            case '--homedir':
-              console.log(os.homedir());
-              this.rl.prompt();
-
-              break;
-            case '--username':
-              console.log(os.userInfo().username);
-              this.rl.prompt();
-
-              break;
-            case '--architecture':
-              console.log(os.arch());
-              this.rl.prompt();
-
-              break;
-            default:
-              console.log('Invalid OS command. Try again.');
-              this.rl.prompt();
-          }
-          break;  
         
         case 'hash':
           await this.calculateHash(args[0], args[1]);
