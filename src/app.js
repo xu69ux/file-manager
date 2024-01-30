@@ -15,9 +15,8 @@ class App {
     this.rl = readline.createInterface({
       input: process.stdin,
       output: process.stdout,
+      prompt: `You are currently in ${this.currentDirectory}\nEnter a command: `,
     });
-
-    this.rl.setPrompt(`You are currently in ${this.currentDirectory}\nEnter a command: `);
 
     this.commands = {
       'os': args => handleOSCommand(args, this.rl),
@@ -42,7 +41,11 @@ class App {
 
     this.rl.on('line', async (input) => {
       const [command, ...args] = input.trim().split(' ');
-
+      if (command === '.exit') {
+        console.log(`Thank you for using File Manager, ${this.username}, goodbye!`);
+        rl.close();
+        return false;
+      }
       if (this.commands[command]) {
         this.currentDirectory = await this.commands[command](args);
       } else {
