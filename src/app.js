@@ -47,13 +47,17 @@ class App {
         process.exit(0);
         return false;
       }
-      if (this.commands[command]) {
-        this.currentDirectory = await this.commands[command](args);
-      } else {
-        console.log('Invalid input. Try again.');
+      try {
+        if (this.commands[command]) {
+          this.currentDirectory = await this.commands[command](args);
+        } else {
+          console.log('Invalid input. Try again.');
+        }
+      } catch (error) {
+        console.error(`Error executing command: ${error.message}`);
+      } finally {
         this.rl.prompt();
       }
-
     }).on('close', () => {
       console.log(`\n⋆｡°✩ Thank you for using File Manager, ${this.username}, goodbye! ₊˚⊹⋆`);
       process.exit(0);
