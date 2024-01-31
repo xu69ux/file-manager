@@ -19,6 +19,11 @@ async function handleZipCommand(command, args, rl) {
 }
 
 async function compressFile(pathToSourceFile, pathToDestinationFile) {
+  if (!pathToSourceFile || !pathToDestinationFile) {
+    console.log('Source and destination paths must be provided.');
+    return;
+  }
+
   if (!fs.existsSync(pathToSourceFile)) {
     console.log('Source file does not exist.');
     return;
@@ -37,6 +42,11 @@ async function compressFile(pathToSourceFile, pathToDestinationFile) {
 }
 
 async function decompressFile(pathToSourceFile, pathToDestinationFile) {
+  if (!pathToSourceFile || !pathToDestinationFile) {
+    console.log('Source and destination paths must be provided.');
+    return;
+  }
+  
   if (!fs.existsSync(pathToSourceFile)) {
     console.log('Source file does not exist.');
     return;
