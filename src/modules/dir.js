@@ -62,9 +62,8 @@ async function cdCommand(pathToDirectory, currentDirectory, rl) {
 function upCommand(currentDirectory, rl) {
   const newPath = path.resolve(currentDirectory, '..');
   if (newPath === path.parse(newPath).root) {
-    console.log("You are already at the root directory.");
-    updatePrompt(rl, currentDirectory);
-    return currentDirectory;
+    updatePrompt(rl, newPath);
+    return newPath;
   }
   updatePrompt(rl, newPath);
   return newPath;
