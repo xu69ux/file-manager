@@ -33,14 +33,12 @@ async function lsCommand(currentDirectory, rl) {
     filesWithDetails.forEach(file => {
       console.log(`${file.name}\t\t${file.type}`);
     });
-    
     console.log('\n');
     console.table(filesWithDetails);
     console.log('\n');
   } catch (error) {
     console.error(`Error reading directory: ${error}`);
   }
-
   updatePrompt(rl, currentDirectory);
   return currentDirectory;
 }
@@ -54,7 +52,6 @@ async function cdCommand(pathToDirectory, currentDirectory, rl) {
     updatePrompt(rl, currentDirectory);
     return currentDirectory;
   }
-
   updatePrompt(rl, newPath);
   return newPath;
 }
