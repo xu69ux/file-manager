@@ -55,11 +55,11 @@ async function catCommand(pathToFile) {
   }
 }
 
-async function addCommand(pathToDirectory, fileName) {
+async function addCommand(fileName) {
   try {
-    const filePath = path.join(pathToDirectory, fileName);
+    const filePath = path.join(process.cwd(), fileName);
     await fs.promises.writeFile(filePath, '');
-    console.log(`File ${fileName} created successfully in ${pathToDirectory}`);
+    console.log(`File ${fileName} created successfully at ${filePath}`);
   } catch (error) {
     await handleENOENTError(error);
   }
