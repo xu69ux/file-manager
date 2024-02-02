@@ -21,8 +21,6 @@ function handleOSCommand(args, rl) {
     console.log('Invalid OS command. Try again.');
     console.log('Valid commands are:', Object.keys(commands).join(', '));
   }
-
-  rl.prompt();
 }
 
 export default handleOSCommand;
