@@ -7,16 +7,14 @@ async function handleHashCommand(args, rl) {
     const result = await calculateHash(pathToFile, hashType);
     console.log(result);
   } catch (error) {
-    console.error(`Error calculating hash: ${error.message}`);
+    console.error(`${error.message}`);
   }
-  rl.prompt();
 };
 
 async function calculateHash(pathToFile, hashType = 'sha256') {
   try {
     const hash = crypto.createHash(hashType);
     const data = await fs.readFile(pathToFile);
-  
     hash.update(data);
     return hash.digest('hex');
   } catch (error) {
