@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import fs from 'fs/promises';
 
-async function handleHashCommand(args, rl) {
+async function handleHashCommand(args) {
   const [pathToFile, hashType] = args;
   try {
     const result = await calculateHash(pathToFile, hashType);

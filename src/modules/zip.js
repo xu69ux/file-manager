@@ -5,7 +5,7 @@ import { promisify } from 'util';
 
 const pipelineAsync = promisify(pipeline);
 
-async function handleZipCommand(command, args, rl) {
+async function handleZipCommand(command, args) {
   switch (command) {
     case 'compress':
       await compressFile(args[0], args[1]);
@@ -25,7 +25,7 @@ async function compressFile(pathToSourceFile, pathToDestinationFile) {
     console.log('Source file does not exist.');
     return;
   }
-  
+
   const gzip = zlib.createGzip();
   const source = fs.createReadStream(pathToSourceFile);
   const destination = fs.createWriteStream(pathToDestinationFile);

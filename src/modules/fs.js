@@ -10,26 +10,29 @@ const commands = {
   rm: rmCommand
 };
 
-async function handleFSCommand(command, args, rl) {
+async function handleFSCommand(command, args) {
   const commandFunc = commands[command];
   if (!commandFunc) {
     console.log(`Unknown command: ${command}`);
     return;
   }
-  return commandFunc(...args, rl);
+  return commandFunc(...args);
 };
 
-async function handleENOENTError(err, rl) {
-  if (err.code === 'ENOENT') {
+async function handleENOENTError(error) {
+  if (error.code === 'ENOENT') {
     console.error('File or directory not found');
-    rl.prompt();
   } else {
-    throw err;
+    throw error;
   }
 }
 
-async function catCommand(pathToFile, rl) {
+async function catCommand(pathToFile) {
   try {
+    if (!fs.lstatSync(pathToFile).isFile()) {
+      console.error('Path provided is not a file');
+      return;
+    }
     await fs.promises.access(pathToFile);
     const readStream = fs.createReadStream(pathToFile);
 
@@ -38,41 +41,41 @@ async function catCommand(pathToFile, rl) {
         console.log(chunk.toString());
       });
 
-      readStream.on('error', async (err) => {
-        await handleENOENTError(err, rl);
-        reject(err);
+      readStream.on('error', async (error) => {
+        await handleENOENTError(error);
+        reject(error);
       });
 
       readStream.on('end', () => {
         resolve();
       });
     });
-  } catch (err) {
-    await handleENOENTError(err, rl);
+  } catch (error) {
+    await handleENOENTError(error);
   }
 }
 
-async function addCommand(pathToDirectory, fileName, rl) {
+async function addCommand(pathToDirectory, fileName) {
   try {
     const filePath = path.join(pathToDirectory, fileName);
     await fs.promises.writeFile(filePath, '');
     console.log(`File ${fileName} created successfully in ${pathToDirectory}`);
-  } catch (err) {
-    await handleENOENTError(err, rl);
+  } catch (error) {
+    await handleENOENTError(error);
   }
 }
 
-async function rnCommand(pathToFile, newPath, rl) {
+async function rnCommand(pathToFile, newFileName) {
   try {
     await fs.promises.access(pathToFile);
-    await fs.promises.rename(pathToFile, newPath);
-    console.log(`File renamed successfully to ${newPath}`);
-  } catch (err) {
-    await handleENOENTError(err, rl);
+    await fs.promises.rename(pathToFile, newFileName);
+    console.log(`File renamed successfully to ${newFileName}`);
+  } catch (error) {
+    await handleENOENTError(error);
   }
 }
 
-async function cpCommand(pathToSourceFile, pathToDestinationFolder, rl) {
+async function cpCommand(pathToSourceFile, pathToDestinationFolder) {
   try {
     await fs.promises.access(pathToSourceFile);
     const destinationPath = path.join(pathToDestinationFolder, path.basename(pathToSourceFile));
@@ -83,9 +86,9 @@ async function cpCommand(pathToSourceFile, pathToDestinationFolder, rl) {
     return new Promise((resolve, reject) => {
       readStream.pipe(writeStream);
 
-      readStream.on('error', async (err) => {
-        await handleENOENTError(err, rl);
-        reject(err);
+      readStream.on('error', async (error) => {
+        await handleENOENTError(error);
+        reject(error);
       });
 
       writeStream.on('finish', () => {
@@ -93,12 +96,12 @@ async function cpCommand(pathToSourceFile, pathToDestinationFolder, rl) {
         resolve();
       });
     });
-  } catch (err) {
-    await handleENOENTError(err, rl);
+  } catch (error) {
+    await handleENOENTError(error);
   }
 }
 
-async function mvCommand(pathToFile, pathToNewDirectory, rl) {
+async function mvCommand(pathToFile, pathToNewDirectory) {
   const fileName = path.basename(pathToFile);
   const newPath = path.join(pathToNewDirectory, fileName);
 
@@ -114,26 +117,25 @@ async function mvCommand(pathToFile, pathToNewDirectory, rl) {
           await fs.promises.unlink(pathToFile);
           console.log(`File moved successfully to ${newPath}`);
           resolve();
-        } catch (err) {
-          reject(err);
+        } catch (error) {
+          reject(error);
         }
       });
 
       writeStream.on('error', reject);
       readStream.on('error', reject);
     });
-  } catch (err) {
-    await handleENOENTError(err, rl);
+  } catch (error) {
+    await handleENOENTError(error);
   }
 }
 
-async function rmCommand(pathToFile, rl) {
+async function rmCommand(pathToFile) {
   try {
     await fs.promises.unlink(pathToFile);
     console.log('File deleted successfully.');
-    rl.prompt();
-  } catch (err) {
-    await handleENOENTError(err, rl);
+  } catch (error) {
+    await handleENOENTError(error);
   }
 }
 

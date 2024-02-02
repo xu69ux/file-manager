@@ -11,7 +11,7 @@ const commands = {
   '--architecture': () => os.arch(),
 };
 
-function handleOSCommand(args, rl) {
+function handleOSCommand(args) {
   const osCommand = args[0];
   const commandFunc = commands[osCommand];
 
